@@ -1,98 +1,112 @@
 const express = require('express');
-const { resolve } = require('path');
 const cors = require('cors');
 
-const app = express(); // Define app before using it
+const app = express();
 app.use(cors());
 
 const port = 3000;
 
+// Initial Cart Data
 let cart = [
   { productId: 1, name: 'Laptop', price: 50000, quantity: 1 },
   { productId: 2, name: 'Mobile', price: 20000, quantity: 2 }
 ];
 
-// function to Add an Item to the Cart
-function addNewItem(productId,name,price,quantity){
-  let cartItem = {
-    productId: productId,
-    name: name,
-    price: price,
-    quantity: quantity
-  };
-  cart.push(cartItem);
+// Function to add an item to the cart
+function addNewItem(productId, name, price, quantity) {
+  productId = parseInt(productId);
+  price = parseFloat(price);
+  quantity = parseInt(quantity);
+
+  let existingItem = cart.find(item => item.productId === productId);
+  if (existingItem) {
+    existingItem.quantity += quantity; // Update quantity if item exists
+  } else {
+    cart.push({ productId, name, price, quantity });
+  }
   return cart;
 }
-// Endpoint 1:Add an Item to the Cart
-app.get('/cart/add',(req,res)=>{
-  let productId=parseInt(req.query.productId);
-  let name=req.query.name;
-  let price=parseFloat(req.query.price);
-  let quantity=req.query.quantity;
-  let result=addNewItem(productId,name,price,quantity,cart);
-  res.json({cartItem:result});
-})
 
-// function to  Edit Quantity of an Item in the Cart
-function editQuantity(ele,productId,quantity){
-  if(ele.productId===productId){
-    ele.quantity=quantity;
+// Endpoint 1: Add an item to the cart
+app.get('/cart/add', (req, res) => {
+  const { productId, name, price, quantity } = req.query;
+
+  if (!productId || !name || !price || !quantity) {
+    return res.status(400).json({ error: "Missing required parameters" });
   }
-  return ele;
-}
-// Endpoint 2:Edit Quantity of an Item in the Cart
-app.get('/cart/edit',(req,res)=>{
-  let productId=parseInt(req.query.productId);
-  let quantity=parseInt(req.query.quantity);
-  let result=cart.filter(ele=>editQuantity(ele,productId,quantity));
-  res.json(result);
-})
 
-// function to Delete an Item from the Cart
-function deleteItemFromCart(productId){
-  cart = cart.filter(item => item.productId !== productId); // Remove item
+  let updatedCart = addNewItem(productId, name, price, quantity);
+  res.json({ cartItems: updatedCart });
+});
+
+// Function to edit quantity of an item
+function editQuantity(productId, quantity) {
+  productId = parseInt(productId);
+  quantity = parseInt(quantity);
+
+  cart = cart.map(item =>
+    item.productId === productId ? { ...item, quantity } : item
+  );
   return cart;
 }
-// Endpoint 3:Delete an Item from the Cart
-app.get('/cart/delete',(req,res)=>{
-  let productId=parseInt(req.query.productId);
-  cart = deleteItemFromCart(productId);
-  res.json({cartItems:cart});
-})
 
-// Endpoint 4:Read Items in the Cart
-app.get('/cart',(req,res)=>{
-  res.json({cartitems:result});
-})
+// Endpoint 2: Edit quantity of an item in the cart
+app.get('/cart/edit', (req, res) => {
+  const { productId, quantity } = req.query;
 
-// function to Calculate Total Quantity of Items in the Cart
-function totalQuantity(cart){
-  let total=0;
-  for(let i=0;i<cart.length;i++){
-    total=cart[i].quantity+total;
+  if (!productId || !quantity) {
+    return res.status(400).json({ error: "Missing required parameters" });
   }
-  return total;
-}
-// Endpoint 5:Calculate Total Quantity of Items in the Cart
-app.get('/cart/total-quantity',(req,res)=>{
-  let total=totalQuantity(cart);
-  res.json({totalQuantity:total});
-})
 
-// function to Calculate Total Price of Items in the Cart
-function totalPrice(cart){
-  let total=0;
-  for(let i=0;i<cart.length;i++){
-    total+=cart[i].price*cart[i].quantity;
+  let updatedCart = editQuantity(productId, quantity);
+  res.json({ cartItems: updatedCart });
+});
+
+// Function to delete an item from the cart
+function deleteItemFromCart(productId) {
+  productId = parseInt(productId);
+  cart = cart.filter(item => item.productId !== productId);
+  return cart;
+}
+
+// Endpoint 3: Delete an item from the cart
+app.get('/cart/delete', (req, res) => {
+  const { productId } = req.query;
+
+  if (!productId) {
+    return res.status(400).json({ error: "Missing required parameters" });
   }
-  return total;
-}
-// Endpoint 6:Calculate Total Price of Items in the Cart
-app.get('/cart/total-price',(req,res)=>{
-  let total=totalPrice(cart);
-  res.json({totalprice:total});
-})
 
+  let updatedCart = deleteItemFromCart(productId);
+  res.json({ cartItems: updatedCart });
+});
+
+// Endpoint 4: Read all items in the cart
+app.get('/cart', (req, res) => {
+  res.json({ cartItems: cart });
+});
+
+// Function to calculate total quantity
+function totalQuantity() {
+  return cart.reduce((total, item) => total + item.quantity, 0);
+}
+
+// Endpoint 5: Calculate total quantity of items
+app.get('/cart/total-quantity', (req, res) => {
+  res.json({ totalQuantity: totalQuantity() });
+});
+
+// Function to calculate total price
+function totalPrice() {
+  return cart.reduce((total, item) => total + item.price * item.quantity, 0);
+}
+
+// Endpoint 6: Calculate total price of items
+app.get('/cart/total-price', (req, res) => {
+  res.json({ totalPrice: totalPrice() });
+});
+
+// Start server
 app.listen(port, () => {
-  console.log(`Example app listening at http://localhost:${port}`);
+  console.log(`Server running at http://localhost:${port}`);
 });

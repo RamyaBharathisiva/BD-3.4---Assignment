@@ -34,7 +34,7 @@ app.get('/cart/add',(req,res)=>{
 })
 
 // function to  Edit Quantity of an Item in the Cart
-function editQuantity(ele,cart,productId,quantity){
+function editQuantity(ele,productId,quantity){
   if(ele.productId===productId){
     ele.quantity=quantity;
   }
@@ -43,8 +43,8 @@ function editQuantity(ele,cart,productId,quantity){
 // Endpoint 2:Edit Quantity of an Item in the Cart
 app.get('/cart/edit',(req,res)=>{
   let productId=parseInt(req.query.productId);
-  let quantity=req.query.quantity;
-  let result=cart.filter(ele=>editQuantity(ele,cart,productId,quantity));
+  let quantity=parseInt(req.query.quantity);
+  let result=cart.filter(ele=>editQuantity(ele,productId,quantity));
   res.json(result);
 })
 

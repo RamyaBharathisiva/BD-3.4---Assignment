@@ -62,7 +62,6 @@ app.get('/cart/delete',(req,res)=>{
 
 // Endpoint 4:Read Items in the Cart
 app.get('/cart',(req,res)=>{
-  let result=cart;
   res.json({cartitems:result});
 })
 
